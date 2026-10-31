@@ -1,11 +1,15 @@
 #!/usr/bin/env node
-// Hybrid profile: a compact stats card (merged-PR total + 30-day dots) as SVG for the
-// visual focal point, plus a clickable repo table injected into README.md. Zero deps, Node 18+.
+// Hybrid profile:
+//   1. assets/stats-card.svg — compact stats card (merged-PR total + 30-day dots).
+//   2. assets/repo-{i}.svg — one clickable "row card" per repository (real owner avatar
+//      base64-inlined, repo name, merged-PR count, stars), wrapped in an <a> in README.md
+//      so the whole row opens that repo's merged-PR list.
+// Zero dependencies, Node 18+.
 //
 //   GITHUB_TOKEN=xxx node scripts/generate-profile.mjs
 //   node scripts/generate-profile.mjs --data cache.json      # offline: reuse a saved payload
 
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, unlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const USER = process.env.PROFILE_USER || 'gouyu-hou';
@@ -21,6 +25,8 @@ const DATA_FILE = dataArgIndex >= 0 ? args[dataArgIndex + 1] : null;
 const W = 880;
 const PAD = 32;
 const FONT = "ui-sans-serif, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif";
+const MONO = "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace";
+const STAR_PATH = 'M0 -7 L1.76 -2.43 L6.66 -2.16 L2.85 0.93 L4.11 5.66 L0 3 L-4.11 5.66 L-2.85 0.93 L-6.66 -2.16 L-1.76 -2.43 Z';
 
 function die(msg) {
   console.error(`profile-stats: ${msg}`);
@@ -55,6 +61,9 @@ async function loadItems() {
   return items;
 }
 
+// stars + owner avatar (URL and base64 data URI) per repository. The base64 form is
+// inlined into each repo row card so the SVG stays self-contained (SVG served as <img>
+// cannot load external images); the URL is kept as a fallback for the README table.
 async function loadRepoMeta(fullNames) {
   const meta = new Map();
   for (const full of fullNames) {
@@ -62,9 +71,22 @@ async function loadRepoMeta(fullNames) {
       const repo = await api(`/repos/${full}`);
       const stars = repo.stargazers_count ?? 0;
       const avatarUrl = (repo.owner?.avatar_url || '').replace(/\?.*/, '?v=4&s=64');
-      meta.set(full, { stars, avatarUrl });
+      let avatarData = '';
+      if (avatarUrl) {
+        try {
+          const res = await fetch(avatarUrl, { headers: { 'User-Agent': 'gouyu-hou-profile-stats' } });
+          if (res.ok) {
+            const buf = Buffer.from(await res.arrayBuffer());
+            const ct = res.headers.get('content-type') || 'image/png';
+            avatarData = `data:${ct};base64,${buf.toString('base64')}`;
+          }
+        } catch {
+          avatarData = '';
+        }
+      }
+      meta.set(full, { stars, avatarUrl, avatarData });
     } catch {
-      meta.set(full, { stars: 0, avatarUrl: '' });
+      meta.set(full, { stars: 0, avatarUrl: '', avatarData: '' });
     }
   }
   return meta;
@@ -92,39 +114,84 @@ function fmtMD(d) {
   return `${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}`;
 }
 
-function textWidth(text, size) {
+function textWidth(text, size, mono = false) {
   let w = 0;
   for (const ch of text) {
     const code = ch.codePointAt(0);
-    const wide = code >= 0x2e80 && code <= 0xa4cf;
-    w += wide ? size * 0.92 : size * 0.55;
+    const wide = code >= 0x1100 && (code <= 0x115f || code === 0x2329 || code === 0x232a ||
+      (code >= 0x2e80 && code <= 0xa4cf) || (code >= 0xac00 && code <= 0xd7a3) ||
+      (code >= 0xf900 && code <= 0xfaff) || (code >= 0xfe30 && code <= 0xfe6f) ||
+      (code >= 0xff00 && code <= 0xff60) || (code >= 0xffe0 && code <= 0xffe6));
+    w += wide ? size * 0.92 : size * (mono ? 0.6 : 0.55);
   }
   return w;
+}
+
+function truncate(text, size, maxPx, mono = false) {
+  if (textWidth(text, size, mono) <= maxPx) return text;
+  let out = text;
+  while (out.length > 1 && textWidth(`${out}...`, size, mono) > maxPx) out = out.slice(0, -1);
+  return `${out}...`;
 }
 
 function repoListUrl(full) {
   return `https://github.com/${full}/pulls?q=${encodeURIComponent(`is:pr author:${USER} is:merged`)}`;
 }
 
-function renderRepoTable(repos) {
-  if (!repos.length) return '<p>还没有合并过 PR。</p>';
-  const rows = repos.map((r) => {
-    const av = r.avatarUrl
-      ? `<img src="${esc(r.avatarUrl)}" width="20" height="20" align="absmiddle" alt=""/> `
-      : '';
-    return `<tr><td><a href="${esc(repoListUrl(r.full))}">${av}<b>${esc(r.full)}</b> &nbsp;·&nbsp; <b>${r.count} 个已合并 PR</b> &nbsp;·&nbsp; <b>★ ${fmtStars(r.stars)}</b></a></td></tr>`;
-  }).join('\n');
-  return `<table>\n${rows}\n</table>`;
+// One clickable "row card" per repository: rounded card with real avatar, repo name,
+// merged-PR count and stars. Same visual language as the old in-card repo list.
+function renderRepoRowSVG(r) {
+  const W = 760;
+  const H = 56;
+  const cy = H / 2;
+  const X_STARS = W - 20;
+  const starText = fmtStars(r.stars);
+  const starX = X_STARS - textWidth(starText, 15) - 9;
+  const X_PR = starX - 14;
+  const nameMax = X_PR - 20 - 62;
+  const name = esc(truncate(r.full, 16, nameMax, true));
+
+  const avatar = r.avatarData
+    ? `<image href="${esc(r.avatarData)}" x="18" y="${cy - 16}" width="32" height="32" preserveAspectRatio="xMidYMid slice" clip-path="url(#avc)"/>`
+    : `<rect x="18" y="${cy - 16}" width="32" height="32" rx="16" fill="var(--purple)" fill-opacity="0.14"/><text x="34" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="var(--purple)" font-family="${FONT}">${esc(r.full.slice(0, 1).toUpperCase())}</text>`;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`${r.full}: ${r.count} 个已合并 PR，${starText} stars`)}">
+<title>${esc(r.full)}</title>
+<style>
+  text { font-family: ${FONT}; }
+  .repo { fill: var(--fg); font-size: 16px; font-weight: 700; font-family: ${MONO}; }
+  .num { fill: var(--fg); font-size: 16px; font-weight: 700; }
+  .unit2 { fill: var(--t2); font-size: 13px; font-weight: 600; }
+  .star { fill: none; stroke: var(--t3); stroke-width: 1.3; stroke-linejoin: round; }
+  .stars { fill: var(--t2); font-size: 15px; font-weight: 700; }
+  svg { --bg: #ffffff; --fg: #111827; --t2: #4b5563; --t3: #9ca3af; --div: #e5e7eb; --purple: #7c3aed; }
+  @media (prefers-color-scheme: dark) {
+    svg { --bg: #0d1117; --fg: #e6edf3; --t2: #b6bcc4; --t3: #7d8590; --div: #21262d; --purple: #a78bfa; }
+  }
+</style>
+<defs><clipPath id="avc"><circle cx="34" cy="${cy}" r="16"/></clipPath></defs>
+<rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="12" fill="var(--bg)" stroke="var(--div)"/>
+${avatar}
+<text class="repo" x="62" y="${cy}" dominant-baseline="central">${name}</text>
+<text x="${X_PR}" y="${cy}" text-anchor="end" dominant-baseline="central"><tspan class="num">${r.count}</tspan><tspan class="unit2"> 个 PR</tspan></text>
+<path class="star" d="${STAR_PATH}" transform="translate(${starX} ${cy})"/>
+<text class="stars" x="${X_STARS}" y="${cy}" text-anchor="end" dominant-baseline="central">${starText}</text>
+</svg>
+`;
 }
 
 function renderStats({ repos, now }) {
-  const table = renderRepoTable(repos);
+  if (!repos.length) {
+    return `<p>还没有合并过 PR。</p>\n\n<sub>数据来源 GitHub REST API · 每天北京时间 12:00 自动刷新 · 更新于 ${fmtStamp(now)}（UTC+8）</sub>`;
+  }
+  const rows = repos
+    .map((r, i) => `<div><a href="${esc(repoListUrl(r.full))}"><img src="assets/repo-${i}.svg" alt="${esc(r.full)}" /></a></div>`)
+    .join('\n');
   const foot = `<sub>数据来源 GitHub REST API · 每天北京时间 12:00 自动刷新 · 更新于 ${fmtStamp(now)}（UTC+8）</sub>`;
-  return `${table}\n\n${foot}`;
+  return `${rows}\n\n${foot}`;
 }
 
-// Compact stats card: big merged-PR total + 30-day dot timeline. No hero, no repo list —
-// those live in README.md as native HTML. Purple, dark/light adaptive.
+// Compact stats card: big merged-PR total + 30-day dot timeline. Purple, dark/light adaptive.
 function buildStatsCard({ total, external, recent30, perDay }) {
   const headY = 40;
   const divY = 58;
@@ -198,7 +265,7 @@ async function main() {
   let recent30 = 0;
   for (const it of items) {
     const full = it.repository_url.split('/repos/')[1];
-    if (!byRepo.has(full)) byRepo.set(full, { full, count: 0, stars: 0, avatarUrl: '' });
+    if (!byRepo.has(full)) byRepo.set(full, { full, count: 0, stars: 0, avatarUrl: '', avatarData: '' });
     byRepo.get(full).count += 1;
     if (full.split('/')[0] !== USER) external += 1;
     const mergedAt = it.pull_request?.merged_at;
@@ -214,16 +281,24 @@ async function main() {
   for (const rec of byRepo.values()) {
     rec.stars = meta.get(rec.full)?.stars ?? 0;
     rec.avatarUrl = meta.get(rec.full)?.avatarUrl ?? '';
+    rec.avatarData = meta.get(rec.full)?.avatarData ?? '';
   }
   const repos = [...byRepo.values()].sort((a, b) => b.count - a.count || b.stars - a.stars);
 
-  await mkdir(path.join(ROOT, 'assets'), { recursive: true });
-  await writeFile(
-    path.join(ROOT, 'assets', 'stats-card.svg'),
-    buildStatsCard({ total: items.length, external, recent30, perDay }),
-    'utf8',
-  );
+  const assetsDir = path.join(ROOT, 'assets');
+  await mkdir(assetsDir, { recursive: true });
+
+  await writeFile(path.join(assetsDir, 'stats-card.svg'), buildStatsCard({ total: items.length, external, recent30, perDay }), 'utf8');
   console.log('profile-stats: 写出 assets/stats-card.svg');
+
+  // Write one row card per repo, and remove stale repo-*.svg files beyond the current count.
+  repos.forEach((r, i) => writeFile(path.join(assetsDir, `repo-${i}.svg`), renderRepoRowSVG(r), 'utf8'));
+  const existing = await readdir(assetsDir).catch(() => []);
+  for (const f of existing) {
+    const m = /^repo-(\d+)\.svg$/.exec(f);
+    if (m && Number(m[1]) >= repos.length) await unlink(path.join(assetsDir, f)).catch(() => {});
+  }
+  console.log(`profile-stats: 写出 ${repos.length} 个仓库行卡片`);
 
   const readmePath = path.join(ROOT, 'README.md');
   const readme = await readFile(readmePath, 'utf8');
