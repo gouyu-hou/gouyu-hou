@@ -25,5 +25,5 @@
 <tr><td><a href="https://github.com/bytedance/deer-flow/pulls?q=is%3Apr%20author%3Agouyu-hou%20is%3Amerged"><img src="https://avatars.githubusercontent.com/u/4158466?v=4&amp;s=64" width="20" height="20" align="absmiddle" alt=""/> <b>bytedance/deer-flow</b> &nbsp;·&nbsp; <b>1 个已合并 PR</b> &nbsp;·&nbsp; <b>★ 84.8k</b></a></td></tr>
 </table>
 
-<sub>数据来源 GitHub REST API · 每天北京时间 12:00 自动刷新 · 更新于 2026-10-31 21:34（UTC+8）</sub>
+<sub>数据来源 GitHub REST API · 每天北京时间 12:00 自动刷新 · 更新于 2026-10-31 21:35（UTC+8）</sub>
 <!-- PROFILE-STATS:END -->
