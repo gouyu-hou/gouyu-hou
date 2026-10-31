@@ -1,9 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="880" height="624" viewBox="0 0 880 624" role="img" aria-label="gouyu-hou 的个人主页：已合并 1 个 PR">
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="574" viewBox="0 0 880 574" role="img" aria-label="gouyu-hou 的个人主页：已合并 1 个 PR">
 <title>gouyu-hou · Agent 开发 · 已合并 PR 统计</title>
 <desc>已合并 1 个 PR，其中 1 个来自他人仓库，近 30 天新增 1 个。</desc>
 <defs>
-<clipPath id="cardclip"><rect x="1" y="1" width="878" height="622" rx="14"/></clipPath>
-<clipPath id="avc0"><circle cx="45" cy="526" r="13"/></clipPath>
+<clipPath id="cardclip"><rect x="1" y="1" width="878" height="572" rx="14"/></clipPath>
 </defs>
 <style>
   text { font-family: ui-sans-serif, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif; }
@@ -19,11 +18,6 @@
   .dot { fill: var(--purple); }
   .dotOff { fill: var(--div); }
   .dayLabel { fill: var(--t3); font-size: 11px; font-weight: 500; }
-  .repo { fill: var(--fg); font-size: 16px; font-weight: 700; font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace; }
-  .num { fill: var(--fg); font-size: 16px; font-weight: 700; }
-  .unit2 { fill: var(--t2); font-size: 13px; font-weight: 600; }
-  .star { fill: none; stroke: var(--t3); stroke-width: 1.3; stroke-linejoin: round; }
-  .stars { fill: var(--t2); font-size: 15px; font-weight: 700; }
   .t3 { fill: var(--t3); }
   .div { stroke: var(--div); stroke-width: 1; }
   .foot { fill: var(--t3); font-size: 12px; font-weight: 500; }
@@ -32,7 +26,7 @@
     svg { --bg: #0d1117; --fg: #e6edf3; --t2: #b6bcc4; --t3: #7d8590; --div: #21262d; --purple: #a78bfa; --footbg: #161b22; }
   }
 </style>
-<rect x="0.5" y="0.5" width="879" height="623" rx="14" fill="var(--bg)" stroke="var(--div)"/>
+<rect x="0.5" y="0.5" width="879" height="573" rx="14" fill="var(--bg)" stroke="var(--div)"/>
 
 <rect x="32" y="59" width="10" height="10" rx="2" fill="var(--purple)"/>
 <text class="tag" x="50" y="64" dominant-baseline="central">AGENT DEVELOPER · BACKEND / FULLSTACK</text>
@@ -81,20 +75,10 @@
 <text class="dayLabel" x="32" y="466" dominant-baseline="central">10-02</text>
 <text class="dayLabel" x="848" y="466" text-anchor="end" dominant-baseline="central">10-31</text>
 
-<g>
-<image href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAADPklEQVR4nOzbX0hTbRwH8J8v+jpez3b2rrPZ3BHNuU1OkmI6XFauwIi6NYi6MLrqz1V0J3TRdYU3pV0GQlgIRX92sdI2GkumlWRMxUHaWjFX286TmtukxZE9IrNQMnU95/k+HHj+3fhhPtt5znPy0+k0yDn/4AoFoAAUgAL87QBBJFaMRz8LuL2W5JH0LeANBdu8oeAtAJjWM8yTEkbpLmGULouGm8Bz5AKQnUk9w7h2sP87yln14xJGObfiX6Cz59WZ4bEwj9uEpfzTzMwpbyh497Z/JHbV5/XggXxc6XWOd/U6x28AwJvm+tI+wcj1C0bOs7OSQ3gOIfkXAJpWAGSK9ImodQ8FpesiACwAwGBzfekzwci5Gqr1z8sN7PzSbBl8C0hANvdQsL3rzmvn6UuOiGvwfQUelANAdhgAUOCGHAGICwWgABSAAlAACkAB5AuQ//Pu3CyhmVn1yJdYi3SPcriMv4f7iQWIzicKAiJq8IUj9oCIDkQTyf3S3ZxVx3UCAHkAKJnMG4uJdb5w5GBARM2ZP1iJxzciOQVwfWS0eywmnsRtOS6CRbgiVwCgAJsM8MfWgI7etx1oNlmw28I5zDzrMfMskhUAABj8U/Fj/qn4eQBISnuJjYLObeJV/TZB59mmUiTwRFIBlmdx53XAP9004J9u73YGEhpV4Yt6M/dw367tPWae/YgnkgqQncIoStidQyE7mkspza3sZTxAF8EtXgQpAAWgABSAAlAACkABKAAFoAAUgAJsNYCh6D/p+FoYt0naD1hT2qpM16TLF44IARHZfeFIS+bZgAbPIRoAF2ux1i9dJ8zGzuh8Ii8gohoJYzQmHvmaSu3F84gFWF40isK0VaEdthZrhwHgSiCOVACgx+PEA2SXSrVK2m1GW7UIxgFgFjdIyGqfAOmo7MvM2WEij8pmA3zfwMPSE0KZ+sHRxtIe3JFTAK2HLGf31Boe1VYVf8B968ykiVe5zDzbb+LZPpugy5VnAYsPbVYAnDtedxPXfzPfeG3R/RqjxmHi2ac2QfcOD+RAfvnCxBLAesuF1uo2XM+ByPOVGemlqbmFlMKi4fy4b7UQBbAZvwMoAAWgAGQB/BgAFdIczCslEDsAAAAASUVORK5CYII=" x="32" y="513" width="26" height="26" preserveAspectRatio="xMidYMid slice" clip-path="url(#avc0)"/>
-<text class="repo" x="70" y="526" dominant-baseline="central">bytedance/deer-flow</text>
-<text x="728" y="526" text-anchor="end" dominant-baseline="central"><tspan class="num">1</tspan><tspan class="unit2"> 个 PR</tspan></text>
-<path class="star" d="M0 -7 L1.76 -2.43 L6.66 -2.16 L2.85 0.93 L4.11 5.66 L0 3 L-4.11 5.66 L-2.85 0.93 L-6.66 -2.16 L-1.76 -2.43 Z" transform="translate(797.75 526)"/>
-<text class="stars" x="848" y="526" text-anchor="end" dominant-baseline="central">84.8k</text>
-
-</g>
-
-
 <g clip-path="url(#cardclip)">
-<rect x="0" y="580" width="880" height="44" fill="var(--footbg)"/>
-<line class="div" x1="0" y1="580" x2="880" y2="580"/>
-<text class="foot" x="32" y="604" dominant-baseline="central">数据来源 GitHub REST API · 每日自动刷新</text>
-<text class="foot" x="848" y="604" text-anchor="end" dominant-baseline="central">更新于 2026-10-31 21:20（UTC+8）</text>
+<rect x="0" y="530" width="880" height="44" fill="var(--footbg)"/>
+<line class="div" x1="0" y1="530" x2="880" y2="530"/>
+<text class="foot" x="32" y="554" dominant-baseline="central">数据来源 GitHub REST API · 每日自动刷新</text>
+<text class="foot" x="848" y="554" text-anchor="end" dominant-baseline="central">更新于 2026-10-31 21:26（UTC+8）</text>
 </g>
 </svg>

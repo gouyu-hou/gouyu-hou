@@ -64,9 +64,8 @@ async function loadItems() {
   return items;
 }
 
-// stars + owner avatar for each repository. The avatar is downloaded and inlined as a
-// base64 data URI so the SVG stays fully self-contained (SVG served as <img> cannot load
-// external images). Newly merged repos therefore always render with their real logo.
+// stars + owner avatar URL for each repository. The avatar URL feeds the clickable
+// repo list in README.md (GitHub proxies avatars.githubusercontent.com for us).
 async function loadRepoMeta(fullNames) {
   const meta = new Map();
   for (const full of fullNames) {
@@ -74,22 +73,9 @@ async function loadRepoMeta(fullNames) {
       const repo = await api(`/repos/${full}`);
       const stars = repo.stargazers_count ?? 0;
       const avatarUrl = (repo.owner?.avatar_url || '').replace(/\?.*/, '?v=4&s=64');
-      let avatar = '';
-      if (avatarUrl) {
-        try {
-          const res = await fetch(avatarUrl, { headers: { 'User-Agent': 'gouyu-hou-profile-stats' } });
-          if (res.ok) {
-            const buf = Buffer.from(await res.arrayBuffer());
-            const ct = res.headers.get('content-type') || 'image/png';
-            avatar = `data:${ct};base64,${buf.toString('base64')}`;
-          }
-        } catch {
-          avatar = '';
-        }
-      }
-      meta.set(full, { stars, avatar });
+      meta.set(full, { stars, avatarUrl });
     } catch {
-      meta.set(full, { stars: 0, avatar: '' });
+      meta.set(full, { stars: 0, avatarUrl: '' });
     }
   }
   return meta;
@@ -149,8 +135,6 @@ const STAR_PATH = 'M0 -7 L1.76 -2.43 L6.66 -2.16 L2.85 0.93 L4.11 5.66 L0 3 L-4.
 
 function buildCard({ items, repos, external, recent30, perDay, now }) {
   const total = items.length;
-  const rows = repos.slice(0, CONFIG.maxRepoRows);
-  const hasMore = repos.length > rows.length;
 
   let y = 64;
   const heroTagY = y;
@@ -173,16 +157,8 @@ function buildCard({ items, repos, external, recent30, perDay, now }) {
   y += 26;
   const dotsLabelY = y;
   y += 38;
-  const listTop = y;
-  const rowH = 50;
-  y = listTop + rows.length * rowH + (rows.length ? 0 : 28);
-  if (hasMore) y += 26;
   const footerTop = y + 26;
   const H = footerTop + 44;
-
-  const X_PR = W - PAD - 120;
-  const X_STARS = W - PAD;
-  const nameMax = X_PR - 24 - (PAD + 38);
 
   const days = [...perDay.keys()];
   const first = days[0];
@@ -196,46 +172,13 @@ function buildCard({ items, repos, external, recent30, perDay, now }) {
     return `<circle class="${cls}" cx="${x.toFixed(1)}" cy="${dotsY}" r="${r.toFixed(1)}"/>`;
   });
 
-  const avatarClips = rows
-    .map((r, i) => `<clipPath id="avc${i}"><circle cx="${PAD + 13}" cy="${listTop + i * rowH + 22}" r="13"/></clipPath>`)
-    .join('\n');
-
-  const rowNodes = rows.length
-    ? rows.map((r, i) => {
-        const top = listTop + i * rowH;
-        const cy = top + 22;
-        const [owner] = r.full.split('/');
-        const color = hashColor(owner);
-        const name = esc(truncate(r.full, 14, nameMax, true));
-        const divider = i < rows.length - 1
-          ? `<line class="div" x1="${PAD}" y1="${top + rowH - 0.5}" x2="${W - PAD}" y2="${top + rowH - 0.5}"/>`
-          : '';
-        const icon = r.avatar
-          ? `<image href="${esc(r.avatar)}" x="${PAD}" y="${cy - 13}" width="26" height="26" preserveAspectRatio="xMidYMid slice" clip-path="url(#avc${i})"/>`
-          : `<rect x="${PAD}" y="${cy - 13}" width="26" height="26" rx="13" fill="${color}" fill-opacity="0.14"/><text x="${PAD + 13}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="600" fill="${color}" font-family="${FONT}">${esc(owner.slice(0, 1).toUpperCase())}</text>`;
-        const starText = fmtStars(r.stars);
-        const starX = X_STARS - textWidth(starText, 15) - 9;
-        return `<g>
-${icon}
-<text class="repo" x="${PAD + 38}" y="${cy}" dominant-baseline="central">${name}</text>
-<text x="${X_PR}" y="${cy}" text-anchor="end" dominant-baseline="central"><tspan class="num">${r.count}</tspan><tspan class="unit2"> 个 PR</tspan></text>
-<path class="star" d="${STAR_PATH}" transform="translate(${starX} ${cy})"/>
-<text class="stars" x="${X_STARS}" y="${cy}" text-anchor="end" dominant-baseline="central">${starText}</text>
-${divider}
-</g>`;
-      }).join('\n')
-    : `<text class="t3" x="${PAD}" y="${listTop + 4}" dominant-baseline="central" font-size="13">还没有合并过 PR</text>`;
-
-  const moreRow = hasMore
-    ? `<text class="t3" x="${W / 2}" y="${listTop + rows.length * rowH + 22}" text-anchor="middle" dominant-baseline="central" font-size="12">… 另有 ${repos.length - rows.length} 个仓库已合并 PR</text>`
-    : '';
+  const avatarClips = '';
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`gouyu-hou 的个人主页：已合并 ${total} 个 PR`)}">
 <title>gouyu-hou · Agent 开发 · 已合并 PR 统计</title>
 <desc>${esc(`已合并 ${total} 个 PR，其中 ${external} 个来自他人仓库，近 30 天新增 ${recent30} 个。`)}</desc>
 <defs>
 <clipPath id="cardclip"><rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="14"/></clipPath>
-${avatarClips}
 </defs>
 <style>
   text { font-family: ${FONT}; }
@@ -251,11 +194,6 @@ ${avatarClips}
   .dot { fill: var(--purple); }
   .dotOff { fill: var(--div); }
   .dayLabel { fill: var(--t3); font-size: 11px; font-weight: 500; }
-  .repo { fill: var(--fg); font-size: 16px; font-weight: 700; font-family: ${MONO}; }
-  .num { fill: var(--fg); font-size: 16px; font-weight: 700; }
-  .unit2 { fill: var(--t2); font-size: 13px; font-weight: 600; }
-  .star { fill: none; stroke: var(--t3); stroke-width: 1.3; stroke-linejoin: round; }
-  .stars { fill: var(--t2); font-size: 15px; font-weight: 700; }
   .t3 { fill: var(--t3); }
   .div { stroke: var(--div); stroke-width: 1; }
   .foot { fill: var(--t3); font-size: 12px; font-weight: 500; }
@@ -284,9 +222,6 @@ ${timeline.join('\n')}
 <text class="dayLabel" x="${PAD}" y="${dotsLabelY}" dominant-baseline="central">${first}</text>
 <text class="dayLabel" x="${W - PAD}" y="${dotsLabelY}" text-anchor="end" dominant-baseline="central">${last}</text>
 
-${rowNodes}
-${moreRow}
-
 <g clip-path="url(#cardclip)">
 <rect x="0" y="${footerTop}" width="${W}" height="${H - footerTop}" fill="var(--footbg)"/>
 <line class="div" x1="0" y1="${footerTop}" x2="${W}" y2="${footerTop}"/>
@@ -295,6 +230,29 @@ ${moreRow}
 </g>
 </svg>
 `;
+}
+
+function repoListUrl(full) {
+  return `https://github.com/${full}/pulls?q=${encodeURIComponent(`is:pr author:${USER} is:merged`)}`;
+}
+
+// Clickable repository list for README.md. Each row is a single <a> wrapping the whole
+// line, so clicking anywhere on the row opens that repo's merged-PR list. All text uses
+// the same font/size/weight (GitHub default), with the real owner avatar on the left.
+function renderRepoList(repos) {
+  if (!repos.length) return '<p>还没有合并过 PR。</p>';
+  const rows = repos.slice(0, CONFIG.maxRepoRows).map((r) => {
+    const av = r.avatarUrl
+      ? `<img src="${esc(r.avatarUrl)}" width="22" height="22" align="absmiddle" alt=""/>`
+      : '';
+    return `<tr><td>
+<a href="${esc(repoListUrl(r.full))}">${av} <b>${esc(r.full)}</b> &nbsp;·&nbsp; <b>${r.count} 个已合并 PR</b> &nbsp;·&nbsp; <b>★ ${fmtStars(r.stars)}</b></a>
+</td></tr>`;
+  }).join('\n');
+  const more = repos.length > CONFIG.maxRepoRows
+    ? `<tr><td>… 另有 ${repos.length - CONFIG.maxRepoRows} 个仓库也有已合并的 PR</td></tr>`
+    : '';
+  return `<table>\n${rows}${more}\n</table>`;
 }
 
 async function main() {
@@ -315,7 +273,7 @@ async function main() {
   let recent30 = 0;
   for (const it of items) {
     const full = it.repository_url.split('/repos/')[1];
-    if (!byRepo.has(full)) byRepo.set(full, { full, count: 0, stars: 0, avatar: '' });
+    if (!byRepo.has(full)) byRepo.set(full, { full, count: 0, stars: 0, avatarUrl: '' });
     byRepo.get(full).count += 1;
     if (full.split('/')[0] !== USER) external += 1;
     const mergedAt = it.pull_request?.merged_at;
@@ -330,13 +288,20 @@ async function main() {
   const meta = await loadRepoMeta([...byRepo.keys()]);
   for (const rec of byRepo.values()) {
     rec.stars = meta.get(rec.full)?.stars ?? 0;
-    rec.avatar = meta.get(rec.full)?.avatar ?? '';
+    rec.avatarUrl = meta.get(rec.full)?.avatarUrl ?? '';
   }
   const repos = [...byRepo.values()].sort((a, b) => b.count - a.count || b.stars - a.stars);
 
   const svg = buildCard({ items, repos, external, recent30, perDay, now });
   await writeFile(path.join(ROOT, 'assets', 'profile.svg'), svg, 'utf8');
-  console.log(`profile-stats: 写出 assets/profile.svg（${repos.length} 个仓库）`);
+  console.log(`profile-stats: 写出 assets/profile.svg`);
+
+  const readmePath = path.join(ROOT, 'README.md');
+  const readme = await readFile(readmePath, 'utf8');
+  const marker = /<!-- REPO-LIST:START -->[\s\S]*?<!-- REPO-LIST:END -->/;
+  if (!marker.test(readme)) die('README.md 里缺少 <!-- REPO-LIST:START --> / <!-- REPO-LIST:END --> 标记');
+  await writeFile(readmePath, readme.replace(marker, `<!-- REPO-LIST:START -->\n${renderRepoList(repos)}\n<!-- REPO-LIST:END -->`), 'utf8');
+  console.log('profile-stats: README.md 仓库列表已更新');
 }
 
 await main();
