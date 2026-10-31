@@ -181,7 +181,6 @@ function buildCard({ items, repos, external, recent30, perDay, now }) {
   const H = footerTop + 44;
 
   const X_PR = W - PAD - 120;
-  const X_STAR = W - PAD - 84;
   const X_STARS = W - PAD;
   const nameMax = X_PR - 24 - (PAD + 38);
 
@@ -214,12 +213,14 @@ function buildCard({ items, repos, external, recent30, perDay, now }) {
         const icon = r.avatar
           ? `<image href="${esc(r.avatar)}" x="${PAD}" y="${cy - 13}" width="26" height="26" preserveAspectRatio="xMidYMid slice" clip-path="url(#avc${i})"/>`
           : `<rect x="${PAD}" y="${cy - 13}" width="26" height="26" rx="13" fill="${color}" fill-opacity="0.14"/><text x="${PAD + 13}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="600" fill="${color}" font-family="${FONT}">${esc(owner.slice(0, 1).toUpperCase())}</text>`;
+        const starText = fmtStars(r.stars);
+        const starX = X_STARS - textWidth(starText, 15) - 9;
         return `<g>
 ${icon}
 <text class="repo" x="${PAD + 38}" y="${cy}" dominant-baseline="central">${name}</text>
 <text x="${X_PR}" y="${cy}" text-anchor="end" dominant-baseline="central"><tspan class="num">${r.count}</tspan><tspan class="unit2"> 个 PR</tspan></text>
-<path class="star" d="${STAR_PATH}" transform="translate(${X_STAR} ${cy})"/>
-<text class="stars" x="${X_STARS}" y="${cy}" text-anchor="end" dominant-baseline="central">${fmtStars(r.stars)}</text>
+<path class="star" d="${STAR_PATH}" transform="translate(${starX} ${cy})"/>
+<text class="stars" x="${X_STARS}" y="${cy}" text-anchor="end" dominant-baseline="central">${starText}</text>
 ${divider}
 </g>`;
       }).join('\n')
@@ -238,26 +239,26 @@ ${avatarClips}
 </defs>
 <style>
   text { font-family: ${FONT}; }
-  .tag { fill: var(--purple); font-size: 11px; font-weight: 500; letter-spacing: 0.18em; }
-  .name { fill: var(--fg); font-size: 34px; font-weight: 700; }
-  .intro { fill: var(--t2); font-size: 14px; }
-  .sub { fill: var(--t3); font-size: 12px; }
-  .statsHead { fill: var(--purple); font-size: 11px; font-weight: 500; letter-spacing: 0.18em; }
-  .statsFrom { fill: var(--t3); font-size: 11px; }
-  .big { fill: var(--fg); font-size: 52px; font-weight: 700; }
-  .bigUnit { fill: var(--fg); font-size: 16px; font-weight: 500; }
-  .subline { fill: var(--t2); font-size: 12px; }
+  .tag { fill: var(--purple); font-size: 12px; font-weight: 600; letter-spacing: 0.18em; }
+  .name { fill: var(--fg); font-size: 37px; font-weight: 700; }
+  .intro { fill: var(--t2); font-size: 15px; font-weight: 500; }
+  .sub { fill: var(--t3); font-size: 13px; font-weight: 500; }
+  .statsHead { fill: var(--purple); font-size: 12px; font-weight: 600; letter-spacing: 0.18em; }
+  .statsFrom { fill: var(--t3); font-size: 12px; }
+  .big { fill: var(--fg); font-size: 56px; font-weight: 700; }
+  .bigUnit { fill: var(--fg); font-size: 18px; font-weight: 600; }
+  .subline { fill: var(--t2); font-size: 13px; font-weight: 500; }
   .dot { fill: var(--purple); }
   .dotOff { fill: var(--div); }
-  .dayLabel { fill: var(--t3); font-size: 10px; }
-  .repo { fill: var(--fg); font-size: 14px; font-weight: 600; font-family: ${MONO}; }
-  .num { fill: var(--fg); font-size: 14px; font-weight: 700; }
-  .unit2 { fill: var(--t3); font-size: 12px; }
-  .star { fill: none; stroke: var(--t3); stroke-width: 1.2; stroke-linejoin: round; }
-  .stars { fill: var(--t2); font-size: 13px; font-weight: 600; }
+  .dayLabel { fill: var(--t3); font-size: 11px; font-weight: 500; }
+  .repo { fill: var(--fg); font-size: 16px; font-weight: 700; font-family: ${MONO}; }
+  .num { fill: var(--fg); font-size: 16px; font-weight: 700; }
+  .unit2 { fill: var(--t2); font-size: 13px; font-weight: 600; }
+  .star { fill: none; stroke: var(--t3); stroke-width: 1.3; stroke-linejoin: round; }
+  .stars { fill: var(--t2); font-size: 15px; font-weight: 700; }
   .t3 { fill: var(--t3); }
   .div { stroke: var(--div); stroke-width: 1; }
-  .foot { fill: var(--t3); font-size: 11px; }
+  .foot { fill: var(--t3); font-size: 12px; font-weight: 500; }
   svg { --bg: #ffffff; --fg: #111827; --t2: #4b5563; --t3: #9ca3af; --div: #e5e7eb; --purple: #7c3aed; --footbg: #f9fafb; }
   @media (prefers-color-scheme: dark) {
     svg { --bg: #0d1117; --fg: #e6edf3; --t2: #b6bcc4; --t3: #7d8590; --div: #21262d; --purple: #a78bfa; --footbg: #161b22; }
@@ -276,7 +277,7 @@ ${avatarClips}
 <text class="statsFrom" x="${W - PAD}" y="${statsHeadY}" text-anchor="end" dominant-baseline="central">github.com/${esc(USER)}</text>
 <line class="div" x1="${PAD}" y1="${statsDivY}" x2="${W - PAD}" y2="${statsDivY}"/>
 <text class="big" x="${PAD}" y="${bigY}">${total}</text>
-<text class="bigUnit" x="${PAD + textWidth(String(total), 52) + 12}" y="${bigY}">↑ PR 已合并</text>
+<text class="bigUnit" x="${PAD + textWidth(String(total), 56) + 14}" y="${bigY}">↑ PR 已合并</text>
 <text class="subline" x="${PAD}" y="${subY}" dominant-baseline="central">${external} 个来自他人仓库 · 近 30 天 +${recent30}</text>
 
 ${timeline.join('\n')}
