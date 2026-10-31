@@ -2,8 +2,8 @@ name: update profile stats
 
 on:
   schedule:
-    # 每天 UTC 02:30，即北京时间 10:30
-    - cron: "30 2 * * *"
+    # 每天 UTC 04:00，即北京时间 12:00
+    - cron: "0 4 * * *"
   workflow_dispatch:
 
 permissions:
@@ -35,7 +35,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add README.md assets/merged-prs.svg
+          git add README.md assets/profile.svg
           if git diff --quiet --cached; then
             echo "no stats change, skipping commit"
           else
