@@ -7,7 +7,7 @@
 ## 已合并的 Pull Requests
 
 <!-- PROFILE-STATS:START -->
-<div><a href="https://github.com/bytedance/deer-flow/pulls?q=is%3Apr%20author%3Agouyu-hou%20is%3Amerged"><img src="assets/repo-0.svg" alt="bytedance/deer-flow" /></a></div>
+<p align="center"><a href="https://github.com/bytedance/deer-flow/pulls?q=is%3Apr%20author%3Agouyu-hou%20is%3Amerged"><img src="assets/repo-0.svg" alt="bytedance/deer-flow" /></a></p>
 
-<sub>数据来源 GitHub REST API · 每天北京时间 12:00 自动刷新 · 更新于 2026-10-31 21:47（UTC+8）</sub>
+<sub>数据来源 GitHub REST API · 每天北京时间 12:00 自动刷新 · 更新于 2026-10-31 22:17（UTC+8）</sub>
 <!-- PROFILE-STATS:END -->

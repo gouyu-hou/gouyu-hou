@@ -141,19 +141,22 @@ function repoListUrl(full) {
 // One clickable "row card" per repository: rounded card with real avatar, repo name,
 // merged-PR count and stars. Same visual language as the old in-card repo list.
 function renderRepoRowSVG(r) {
-  const W = 760;
+  const W = 880;
   const H = 56;
   const cy = H / 2;
-  const X_STARS = W - 20;
+  const PAD = 32;
+  const AV = 32;
+  const nameX = PAD + AV + 12;
+  const X_STARS = W - PAD;
   const starText = fmtStars(r.stars);
-  const starX = X_STARS - textWidth(starText, 15) - 9;
-  const X_PR = starX - 14;
-  const nameMax = X_PR - 20 - 62;
+  const starX = X_STARS - textWidth(starText, 16) - 9;
+  const X_PR = starX - 16;
+  const nameMax = X_PR - 20 - nameX;
   const name = esc(truncate(r.full, 16, nameMax, true));
 
   const avatar = r.avatarData
-    ? `<image href="${esc(r.avatarData)}" x="18" y="${cy - 16}" width="32" height="32" preserveAspectRatio="xMidYMid slice" clip-path="url(#avc)"/>`
-    : `<rect x="18" y="${cy - 16}" width="32" height="32" rx="16" fill="var(--purple)" fill-opacity="0.14"/><text x="34" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="var(--purple)" font-family="${FONT}">${esc(r.full.slice(0, 1).toUpperCase())}</text>`;
+    ? `<image href="${esc(r.avatarData)}" x="${PAD}" y="${cy - AV / 2}" width="${AV}" height="${AV}" preserveAspectRatio="xMidYMid slice" clip-path="url(#avc)"/>`
+    : `<rect x="${PAD}" y="${cy - AV / 2}" width="${AV}" height="${AV}" rx="${AV / 2}" fill="var(--purple)" fill-opacity="0.14"/><text x="${PAD + AV / 2}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="var(--purple)" font-family="${FONT}">${esc(r.full.slice(0, 1).toUpperCase())}</text>`;
 
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`${r.full}: ${r.count} 个已合并 PR，${starText} stars`)}">
 <title>${esc(r.full)}</title>
@@ -161,18 +164,18 @@ function renderRepoRowSVG(r) {
   text { font-family: ${FONT}; }
   .repo { fill: var(--fg); font-size: 16px; font-weight: 700; font-family: ${MONO}; }
   .num { fill: var(--fg); font-size: 16px; font-weight: 700; }
-  .unit2 { fill: var(--t2); font-size: 13px; font-weight: 600; }
+  .unit2 { fill: var(--fg); font-size: 16px; font-weight: 700; }
   .star { fill: none; stroke: var(--t3); stroke-width: 1.3; stroke-linejoin: round; }
-  .stars { fill: var(--t2); font-size: 15px; font-weight: 700; }
+  .stars { fill: var(--fg); font-size: 16px; font-weight: 700; }
   svg { --bg: #ffffff; --fg: #111827; --t2: #4b5563; --t3: #9ca3af; --div: #e5e7eb; --purple: #7c3aed; }
   @media (prefers-color-scheme: dark) {
     svg { --bg: #0d1117; --fg: #e6edf3; --t2: #b6bcc4; --t3: #7d8590; --div: #21262d; --purple: #a78bfa; }
   }
 </style>
-<defs><clipPath id="avc"><circle cx="34" cy="${cy}" r="16"/></clipPath></defs>
+<defs><clipPath id="avc"><circle cx="${PAD + AV / 2}" cy="${cy}" r="${AV / 2}"/></clipPath></defs>
 <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="12" fill="var(--bg)" stroke="var(--div)"/>
 ${avatar}
-<text class="repo" x="62" y="${cy}" dominant-baseline="central">${name}</text>
+<text class="repo" x="${nameX}" y="${cy}" dominant-baseline="central">${name}</text>
 <text x="${X_PR}" y="${cy}" text-anchor="end" dominant-baseline="central"><tspan class="num">${r.count}</tspan><tspan class="unit2"> 个 PR</tspan></text>
 <path class="star" d="${STAR_PATH}" transform="translate(${starX} ${cy})"/>
 <text class="stars" x="${X_STARS}" y="${cy}" text-anchor="end" dominant-baseline="central">${starText}</text>
@@ -185,7 +188,7 @@ function renderStats({ repos, now }) {
     return `<p>还没有合并过 PR。</p>\n\n<sub>数据来源 GitHub REST API · 每天北京时间 12:00 自动刷新 · 更新于 ${fmtStamp(now)}（UTC+8）</sub>`;
   }
   const rows = repos
-    .map((r, i) => `<div><a href="${esc(repoListUrl(r.full))}"><img src="assets/repo-${i}.svg" alt="${esc(r.full)}" /></a></div>`)
+    .map((r, i) => `<p align="center"><a href="${esc(repoListUrl(r.full))}"><img src="assets/repo-${i}.svg" alt="${esc(r.full)}" /></a></p>`)
     .join('\n');
   const foot = `<sub>数据来源 GitHub REST API · 每天北京时间 12:00 自动刷新 · 更新于 ${fmtStamp(now)}（UTC+8）</sub>`;
   return `${rows}\n\n${foot}`;
@@ -195,11 +198,11 @@ function renderStats({ repos, now }) {
 function buildStatsCard({ total, external, recent30, perDay }) {
   const headY = 40;
   const divY = 58;
-  const bigY = 100;
-  const subY = 130;
-  const dotsY = 166;
-  const dotsLabelY = 192;
-  const H = 214;
+  const bigY = 102;
+  const subY = 158;
+  const dotsY = 198;
+  const dotsLabelY = 224;
+  const H = 248;
 
   const days = [...perDay.keys()];
   const first = days[0];
