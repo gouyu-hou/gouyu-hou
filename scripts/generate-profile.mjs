@@ -250,11 +250,11 @@ ${avatarClips}
   .dot { fill: var(--purple); }
   .dotOff { fill: var(--div); }
   .dayLabel { fill: var(--t3); font-size: 10px; }
-  .repo { fill: var(--fg); font-size: 14px; font-weight: 500; font-family: ${MONO}; }
-  .num { fill: var(--fg); font-size: 14px; font-weight: 600; }
+  .repo { fill: var(--fg); font-size: 14px; font-weight: 600; font-family: ${MONO}; }
+  .num { fill: var(--fg); font-size: 14px; font-weight: 700; }
   .unit2 { fill: var(--t3); font-size: 12px; }
   .star { fill: none; stroke: var(--t3); stroke-width: 1.2; stroke-linejoin: round; }
-  .stars { fill: var(--t2); font-size: 13px; }
+  .stars { fill: var(--t2); font-size: 13px; font-weight: 600; }
   .t3 { fill: var(--t3); }
   .div { stroke: var(--div); stroke-width: 1; }
   .foot { fill: var(--t3); font-size: 11px; }
