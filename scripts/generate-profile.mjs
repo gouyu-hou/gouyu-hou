@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Renders the whole profile card (hero + merged-PR stats + repo list + footer) as one SVG,
-// then refreshes the recent-PR list inside README.md.
+// Renders the profile header card (hero + merged-PR stats + 30-day timeline) as one SVG,
+// then refreshes the repository list (with real org avatars) inside README.md.
 // Zero dependencies, needs Node 18+ (global fetch).
 //
 //   GITHUB_TOKEN=xxx node scripts/generate-profile.mjs
@@ -17,7 +17,7 @@ const CONFIG = {
   tagline: 'AGENT DEVELOPER · BACKEND / FULLSTACK',
   intro: '构建 Coding Agent，持续向 openclaw、deer-flow 等一线 AI 开源仓库贡献代码。',
   introSub: 'Agent 开发 · 后端/全栈 · 2027 届本科在读',
-  maxRepoRows: 6,
+  maxRepoRows: 8,
   timelineDays: 30,
 };
 
@@ -26,10 +26,9 @@ const dataArgIndex = args.indexOf('--data');
 const DATA_FILE = dataArgIndex >= 0 ? args[dataArgIndex + 1] : null;
 
 const W = 880;
-const PAD = 32;
+const PAD = 36;
 const FONT = "ui-sans-serif, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif";
 const MONO = "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace";
-const BADGE_COLORS = ['#7c3aed', '#0891b2', '#ea580c', '#16a34a', '#dc2626', '#4f46e5', '#0f766e', '#a16207'];
 
 function die(msg) {
   console.error(`profile-stats: ${msg}`);
@@ -64,17 +63,19 @@ async function loadItems() {
   return items;
 }
 
-async function loadStars(fullNames) {
-  const stars = new Map();
+// stars + owner avatar for each repository (avatar feeds the README table).
+async function loadRepoMeta(fullNames) {
+  const meta = new Map();
   for (const full of fullNames) {
     try {
       const repo = await api(`/repos/${full}`);
-      stars.set(full, repo.stargazers_count ?? 0);
+      const avatar = (repo.owner?.avatar_url || '').replace(/\?.*/, '?v=4&s=64');
+      meta.set(full, { stars: repo.stargazers_count ?? 0, avatar });
     } catch {
-      stars.set(full, 0);
+      meta.set(full, { stars: 0, avatar: '' });
     }
   }
-  return stars;
+  return meta;
 }
 
 // Rough advance width: CJK/full-width glyphs ~0.92em, latin/digits ~0.55em (mono ~0.6em).
@@ -91,15 +92,8 @@ function textWidth(text, size, mono = false) {
   return w;
 }
 
-function truncate(text, size, maxPx, mono = false) {
-  if (textWidth(text, size, mono) <= maxPx) return text;
-  let out = text;
-  while (out.length > 1 && textWidth(`${out}...`, size, mono) > maxPx) out = out.slice(0, -1);
-  return `${out}...`;
-}
-
 function esc(text) {
-  return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 function fmtStars(n) {
@@ -120,165 +114,248 @@ function fmtMD(d) {
   return `${p(d.getUTCMonth() + 1)}-${p(d.getUTCDate())}`;
 }
 
-function hashColor(text) {
-  let h = 0;
-  for (const ch of text) h = (h * 31 + ch.codePointAt(0)) >>> 0;
-  return BADGE_COLORS[h % BADGE_COLORS.length];
-}
+function buildCard({ total, external, recent30, perDay, now }) {
+  // ---- vertical rhythm: generous spacing between every block ----
+  let y = 64;
+  const tagY = y;            y += 44;   // tag pill -> name
+  const nameY = y;           y += 38;   // name -> intro
+  const introY = y;          y += 30;   // intro -> introSub
+  const introSubY = y;       y += 52;   // introSub -> stats head
+  const statsHeadY = y;      y += 24;   // stats head -> divider
+  const statsDivY = y;       y += 78;   // divider -> big number
+  const bigY = y;            y += 38;   // big number -> subline
+  const subY = y;            y += 54;   // subline -> timeline dots
+  const dotsY = y;           y += 24;   // dots -> day labels
+  const dotsLabelY = y;      y += 34;   // labels -> footer
+  const footerTop = y;
+  const H = footerTop + 46;
 
-// 5-point star, outer r 7, centered at origin.
-const STAR_PATH = 'M0 -7 L1.76 -2.43 L6.66 -2.16 L2.85 0.93 L4.11 5.66 L0 3 L-4.11 5.66 L-2.85 0.93 L-6.66 -2.16 L-1.76 -2.43 Z';
-
-function buildCard({ items, repos, external, recent30, perDay, now }) {
-  const total = items.length;
-  const rows = repos.slice(0, CONFIG.maxRepoRows);
-  const hasMore = repos.length > rows.length;
-
-  let y = 58;
-  const heroTagY = y;
-  y += 46;
-  const nameY = y;
-  y += 30;
-  const introY = y;
-  y += 24;
-  const introSubY = y;
-  y += 36;
-  const statsHeadY = y;
-  y += 16;
-  const statsDivY = y;
-  y += 64;
-  const bigY = y;
-  y += 28;
-  const subY = y;
-  y += 34;
-  const dotsY = y;
-  y += 18;
-  const dotsLabelY = y;
-  y += 28;
-  const listTop = y;
-  const rowH = 44;
-  y = listTop + rows.length * rowH + (rows.length ? 0 : 24);
-  if (hasMore) y += 24;
-  const footerTop = y + 22;
-  const H = footerTop + 40;
-
-  const X_PR = W - PAD - 120;
-  const X_STAR = W - PAD - 84;
-  const X_STARS = W - PAD;
-  const nameMax = X_PR - 24 - (PAD + 38);
+  const tagSize = 11;
+  const tagSpacing = 0.14 * tagSize;
+  const tagTextW = textWidth(CONFIG.tagline, tagSize) + CONFIG.tagline.length * tagSpacing;
+  const pillW = tagTextW + 30;
 
   const days = [...perDay.keys()];
   const first = days[0];
   const last = days[days.length - 1];
-  const span = W - 2 * PAD - 36;
+  const span = W - 2 * PAD - 40;
   const timeline = days.map((day, i) => {
-    const x = PAD + 18 + (days.length > 1 ? (span * i) / (days.length - 1) : 0);
+    const x = PAD + 20 + (days.length > 1 ? (span * i) / (days.length - 1) : 0);
     const n = perDay.get(day);
-    const r = n > 0 ? Math.min(2 + 2.2 * Math.sqrt(n), 7) : 1.5;
+    const r = n > 0 ? Math.min(2.5 + 2.4 * Math.sqrt(n), 8) : 2;
     const cls = n > 0 ? 'dot' : 'dotOff';
     return `<circle class="${cls}" cx="${x.toFixed(1)}" cy="${dotsY}" r="${r.toFixed(1)}"/>`;
   });
 
-  const rowNodes = rows.length
-    ? rows.map((r, i) => {
-        const top = listTop + i * rowH;
-        const cy = top + 22;
-        const [owner] = r.full.split('/');
-        const color = hashColor(owner);
-        const name = esc(truncate(r.full, 14, nameMax, true));
-        const divider = i < rows.length - 1
-          ? `<line class="div" x1="${PAD}" y1="${top + rowH - 0.5}" x2="${W - PAD}" y2="${top + rowH - 0.5}"/>`
-          : '';
-        return `<g>
-<rect x="${PAD}" y="${cy - 13}" width="26" height="26" rx="7" fill="${color}" fill-opacity="0.12"/>
-<text x="${PAD + 13}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="${color}" font-family="${FONT}">${esc(owner.slice(0, 1).toUpperCase())}</text>
-<text class="repo" x="${PAD + 38}" y="${cy}" dominant-baseline="central">${name}</text>
-<text x="${X_PR}" y="${cy}" text-anchor="end" dominant-baseline="central"><tspan class="num">${r.count}</tspan><tspan class="unit2"> 个 PR</tspan></text>
-<path class="star" d="${STAR_PATH}" transform="translate(${X_STAR} ${cy})"/>
-<text class="stars" x="${X_STARS}" y="${cy}" text-anchor="end" dominant-baseline="central">${fmtStars(r.stars)}</text>
-${divider}
-</g>`;
-      }).join('\n')
-    : `<text class="t3" x="${PAD}" y="${listTop + 4}" dominant-baseline="central" font-size="13">还没有合并过 PR</text>`;
-
-  const moreRow = hasMore
-    ? `<text class="t3" x="${W / 2}" y="${listTop + rows.length * rowH + 22}" text-anchor="middle" dominant-baseline="central" font-size="12">… 另有 ${repos.length - rows.length} 个仓库已合并 PR</text>`
-    : '';
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`gouyu-hou 的个人主页：已合并 ${total} 个 PR`)}">
-<title>gouyu-hou · Agent 开发 · 已合并 PR 统计</title>
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(`${USER} 的个人主页：已合并 ${total} 个 PR`)}">
+<title>${esc(USER)} · Agent 开发 · 已合并 PR 统计</title>
 <desc>${esc(`已合并 ${total} 个 PR，其中 ${external} 个来自他人仓库，近 30 天新增 ${recent30} 个。`)}</desc>
 <defs>
-<clipPath id="cardclip"><rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="14"/></clipPath>
+<clipPath id="cardclip"><rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="16"/></clipPath>
+<linearGradient id="topgrad" x1="0" y1="0" x2="1" y2="0">
+<stop offset="0" class="g1"/><stop offset="1" class="g2"/>
+</linearGradient>
 </defs>
 <style>
   text { font-family: ${FONT}; }
-  .tag { fill: var(--purple); font-size: 11px; font-weight: 500; letter-spacing: 0.18em; }
-  .name { fill: var(--fg); font-size: 34px; font-weight: 700; }
-  .intro { fill: var(--t2); font-size: 14px; }
-  .sub { fill: var(--t3); font-size: 12px; }
-  .statsHead { fill: var(--purple); font-size: 11px; font-weight: 500; letter-spacing: 0.18em; }
+  .tag { fill: var(--accent); font-size: ${tagSize}px; font-weight: 600; letter-spacing: 0.14em; }
+  .name { fill: var(--fg); font-size: 36px; font-weight: 700; letter-spacing: -0.01em; }
+  .intro { fill: var(--t2); font-size: 14.5px; }
+  .sub { fill: var(--t3); font-size: 12.5px; }
+  .statsHead { fill: var(--accent); font-size: 11px; font-weight: 600; letter-spacing: 0.18em; }
   .statsFrom { fill: var(--t3); font-size: 11px; }
-  .big { fill: var(--fg); font-size: 52px; font-weight: 700; }
+  .big { fill: var(--accent); font-size: 56px; font-weight: 700; }
   .bigUnit { fill: var(--fg); font-size: 16px; font-weight: 500; }
-  .subline { fill: var(--t2); font-size: 12px; }
-  .dot { fill: var(--purple); }
+  .subline { fill: var(--t2); font-size: 12.5px; }
+  .dot { fill: var(--accent); }
   .dotOff { fill: var(--div); }
   .dayLabel { fill: var(--t3); font-size: 10px; }
-  .repo { fill: var(--fg); font-size: 14px; font-weight: 500; font-family: ${MONO}; }
-  .num { fill: var(--fg); font-size: 14px; font-weight: 600; }
-  .unit2 { fill: var(--t3); font-size: 12px; }
-  .star { fill: none; stroke: var(--t3); stroke-width: 1.2; stroke-linejoin: round; }
-  .stars { fill: var(--t2); font-size: 13px; }
-  .t3 { fill: var(--t3); }
   .div { stroke: var(--div); stroke-width: 1; }
   .foot { fill: var(--t3); font-size: 11px; }
-  svg { --bg: #ffffff; --fg: #111827; --t2: #4b5563; --t3: #9ca3af; --div: #e5e7eb; --purple: #7c3aed; --footbg: #f9fafb; }
+  .pill { fill: var(--accent); fill-opacity: 0.12; }
+  .g1 { stop-color: #0d9488; }
+  .g2 { stop-color: #38bdf8; }
+  svg { --bg: #ffffff; --fg: #111827; --t2: #4b5563; --t3: #9ca3af; --div: #e5e7eb; --accent: #0f766e; --footbg: #f8fafc; }
   @media (prefers-color-scheme: dark) {
-    svg { --bg: #0d1117; --fg: #e6edf3; --t2: #b6bcc4; --t3: #7d8590; --div: #21262d; --purple: #a78bfa; --footbg: #161b22; }
+    svg { --bg: #0d1117; --fg: #e6edf3; --t2: #b6bcc4; --t3: #7d8590; --div: #21262d; --accent: #2dd4bf; --footbg: #161b22; }
+    .g1 { stop-color: #14b8a6; }
+    .g2 { stop-color: #38bdf8; }
   }
 </style>
-<rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="14" fill="var(--bg)" stroke="var(--div)"/>
+<rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="16" fill="var(--bg)" stroke="var(--div)"/>
+<g clip-path="url(#cardclip)">
+<rect x="0" y="0" width="${W}" height="5" fill="url(#topgrad)"/>
+</g>
 
-<rect x="${PAD}" y="${heroTagY - 5}" width="10" height="10" rx="2" fill="var(--purple)"/>
-<text class="tag" x="${PAD + 18}" y="${heroTagY}" dominant-baseline="central">${esc(CONFIG.tagline)}</text>
+<rect x="${PAD}" y="${tagY - 12}" width="${pillW.toFixed(0)}" height="24" rx="12" class="pill"/>
+<text class="tag" x="${PAD + 15}" y="${tagY}" dominant-baseline="central">${esc(CONFIG.tagline)}</text>
 <text class="name" x="${PAD}" y="${nameY}">${esc(USER)}</text>
 <text class="intro" x="${PAD}" y="${introY}" dominant-baseline="central">${esc(CONFIG.intro)}</text>
 <text class="sub" x="${PAD}" y="${introSubY}" dominant-baseline="central">${esc(CONFIG.introSub)}</text>
 
-<rect x="${PAD}" y="${statsHeadY - 5}" width="10" height="10" rx="2" fill="var(--purple)"/>
-<text class="statsHead" x="${PAD + 18}" y="${statsHeadY}" dominant-baseline="central">MERGED PULL REQUESTS</text>
+<text class="statsHead" x="${PAD}" y="${statsHeadY}" dominant-baseline="central">MERGED PULL REQUESTS</text>
 <text class="statsFrom" x="${W - PAD}" y="${statsHeadY}" text-anchor="end" dominant-baseline="central">github.com/${esc(USER)}</text>
 <line class="div" x1="${PAD}" y1="${statsDivY}" x2="${W - PAD}" y2="${statsDivY}"/>
 <text class="big" x="${PAD}" y="${bigY}">${total}</text>
-<text class="bigUnit" x="${PAD + textWidth(String(total), 52) + 12}" y="${bigY}">↑ PR 已合并</text>
+<text class="bigUnit" x="${PAD + textWidth(String(total), 56) + 14}" y="${bigY}">PR 已合并</text>
 <text class="subline" x="${PAD}" y="${subY}" dominant-baseline="central">${external} 个来自他人仓库 · 近 30 天 +${recent30}</text>
 
 ${timeline.join('\n')}
 <text class="dayLabel" x="${PAD}" y="${dotsLabelY}" dominant-baseline="central">${first}</text>
 <text class="dayLabel" x="${W - PAD}" y="${dotsLabelY}" text-anchor="end" dominant-baseline="central">${last}</text>
 
-${rowNodes}
-${moreRow}
-
 <g clip-path="url(#cardclip)">
 <rect x="0" y="${footerTop}" width="${W}" height="${H - footerTop}" fill="var(--footbg)"/>
 <line class="div" x1="0" y1="${footerTop}" x2="${W}" y2="${footerTop}"/>
-<text class="foot" x="${PAD}" y="${footerTop + 20}" dominant-baseline="central">数据来源 GitHub REST API · 每日自动刷新</text>
-<text class="foot" x="${W - PAD}" y="${footerTop + 20}" text-anchor="end" dominant-baseline="central">更新于 ${fmtStamp(now)}（UTC+8）</text>
+<text class="foot" x="${PAD}" y="${footerTop + 23}" dominant-baseline="central">数据来自 GitHub API · 每天中午 12 点（UTC+8）自动刷新</text>
+<text class="foot" x="${W - PAD}" y="${footerTop + 23}" text-anchor="end" dominant-baseline="central">更新于 ${fmtStamp(now)}</text>
 </g>
 </svg>
 `;
 }
 
-function renderRecent(items) {
-  if (!items.length) return '';
-  const lines = items.map((it) => {
-    const full = it.repository_url.split('/repos/')[1];
-    const date = (it.pull_request?.merged_at || it.created_at || '').slice(0, 10);
-    return `- [#${it.number} ${esc(truncate(it.title, 13, 460))}](${it.html_url}) · ${full} · ${date}`;
-  });
-  return `${lines.join('\n')}\n`;
+// GitHub-contribution-graph style heatmap of merged PRs over the last 52 weeks.
+// Self-rendered and refreshed daily, so every newly merged PR lights up automatically.
+function buildHeatmap({ items, now }) {
+  const PAD = 36;
+  const HW = W;
+  const pitch = 15;
+  const cell = 11.5;
+  const gridX = PAD + 24;
+  const titleY = 40;
+  const gridTop = 68;
+  const gridBottom = gridTop + 7 * pitch;
+  const legendY = gridBottom + 32;
+  const HH = legendY + 20;
+
+  // merged counts per calendar day (Shanghai time)
+  const counts = new Map();
+  for (const it of items) {
+    const m = it.pull_request?.merged_at;
+    if (!m) continue;
+    const d = new Date(Date.parse(m) + 8 * 60 * 60 * 1000);
+    const key = d.toISOString().slice(0, 10);
+    counts.set(key, (counts.get(key) || 0) + 1);
+  }
+
+  const end = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+  const dow = (end.getUTCDay() + 6) % 7; // Monday = 0
+  const lastMonday = new Date(end);
+  lastMonday.setUTCDate(end.getUTCDate() - dow);
+  const start = new Date(lastMonday);
+  start.setUTCDate(lastMonday.getUTCDate() - 51 * 7);
+
+  const level = (n) => (n <= 0 ? 0 : n === 1 ? 1 : n <= 3 ? 2 : n <= 6 ? 3 : 4);
+
+  const squares = [];
+  const monthMarks = [];
+  let lastMonth = -1;
+  let yearTotal = 0;
+  for (let t = start.getTime(); t <= end.getTime(); t += 24 * 60 * 60 * 1000) {
+    const d = new Date(t);
+    const key = d.toISOString().slice(0, 10);
+    const n = counts.get(key) || 0;
+    yearTotal += n;
+    const week = Math.floor((t - start.getTime()) / (7 * 24 * 60 * 60 * 1000));
+    const row = (d.getUTCDay() + 6) % 7;
+    const x = gridX + week * pitch;
+    const y = gridTop + row * pitch;
+    squares.push(`<rect class="hl${level(n)}" x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${cell}" height="${cell}" rx="2.5"/>`);
+    const mon = d.getUTCMonth();
+    if (row === 0 && mon !== lastMonth) {
+      lastMonth = mon;
+      monthMarks.push(`<text class="mon" x="${x.toFixed(1)}" y="${gridTop - 10}" dominant-baseline="central">${mon + 1}月</text>`);
+    }
+  }
+
+  const dayLabels = [0, 2, 4].map((row) =>
+    `<text class="day" x="${PAD}" y="${gridTop + row * pitch + cell / 2}" dominant-baseline="central">${['一', '三', '五'][row / 2]}</text>`).join('\n');
+
+  const legendX0 = HW - PAD - 118;
+  const legend = [0, 1, 2, 3, 4].map((l, i) =>
+    `<rect class="hl${l}" x="${legendX0 + 12 + i * pitch}" y="${legendY - cell / 2}" width="${cell}" height="${cell}" rx="2.5"/>`).join('');
+  const legendText = `<text class="day" x="${legendX0}" y="${legendY}" dominant-baseline="central">少</text>` +
+    `<text class="day" x="${legendX0 + 12 + 5 * pitch + 4}" y="${legendY}" dominant-baseline="central">多</text>`;
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${HW}" height="${HH}" viewBox="0 0 ${HW} ${HH}" role="img" aria-label="最近一年合并 PR 热力图">
+<title>最近一年合并 PR 热力图</title>
+<desc>${esc(`最近 52 周共合并 ${yearTotal} 个 PR。`)}</desc>
+<defs>
+<clipPath id="hclip"><rect x="1" y="1" width="${HW - 2}" height="${HH - 2}" rx="16"/></clipPath>
+<linearGradient id="htopgrad" x1="0" y1="0" x2="1" y2="0">
+<stop offset="0" class="g1"/><stop offset="1" class="g2"/>
+</linearGradient>
+</defs>
+<style>
+  text { font-family: ${FONT}; }
+  .head { fill: var(--accent); font-size: 11px; font-weight: 600; letter-spacing: 0.18em; }
+  .from { fill: var(--t3); font-size: 11px; }
+  .mon { fill: var(--t3); font-size: 10px; }
+  .day { fill: var(--t3); font-size: 10px; }
+  .hl0 { fill: var(--zero); }
+  .hl1 { fill: #99f6e4; }
+  .hl2 { fill: #5eead4; }
+  .hl3 { fill: #14b8a6; }
+  .hl4 { fill: #0f766e; }
+  .g1 { stop-color: #0d9488; }
+  .g2 { stop-color: #38bdf8; }
+  svg { --accent: #0f766e; --t3: #9ca3af; --zero: #eef0f3; }
+  @media (prefers-color-scheme: dark) {
+    svg { --accent: #2dd4bf; --t3: #7d8590; --zero: #161b22; }
+    .hl1 { fill: #0d9488; }
+    .hl2 { fill: #14b8a6; }
+    .hl3 { fill: #2dd4bf; }
+    .hl4 { fill: #99f6e4; }
+    .g1 { stop-color: #14b8a6; }
+  }
+</style>
+<rect x="0.5" y="0.5" width="${HW - 1}" height="${HH - 1}" rx="16" fill="var(--bg, #ffffff)" stroke="var(--edge, #e5e7eb)"/>
+<style>
+  svg { --bg: #ffffff; --edge: #e5e7eb; }
+  @media (prefers-color-scheme: dark) { svg { --bg: #0d1117; --edge: #21262d; } }
+</style>
+<g clip-path="url(#hclip)">
+<rect x="0" y="0" width="${HW}" height="5" fill="url(#htopgrad)"/>
+</g>
+<text class="head" x="${PAD}" y="${titleY}" dominant-baseline="central">MERGED PR ACTIVITY · 最近一年</text>
+<text class="from" x="${HW - PAD}" y="${titleY}" text-anchor="end" dominant-baseline="central">近一年合并 ${yearTotal} 个</text>
+${monthMarks.join('\n')}
+${dayLabels}
+${squares.join('')}
+${legend}${legendText}
+</svg>
+`;
+}
+
+// Repository table for README.md — real owner avatars straight from
+// avatars.githubusercontent.com (camo-proxied by GitHub), regenerated on every run,
+// so newly merged repos show up automatically.
+function renderRepoTable(repos) {
+  if (!repos.length) return '<p align="center"><sub>还没有合并过 PR</sub></p>';
+  const rows = repos.slice(0, CONFIG.maxRepoRows).map((r) => {
+    const [owner] = r.full.split('/');
+    const av = r.avatar
+      ? `<img src="${esc(r.avatar)}" width="30" height="30" alt="${esc(owner)}"/>`
+      : '';
+    return `<tr>
+<td width="46" valign="middle">${av}</td>
+<td valign="middle"><a href="https://github.com/${esc(r.full)}"><b>${esc(r.full)}</b></a></td>
+<td align="right" valign="middle" width="150"><b>${r.count}</b> 个已合并 PR</td>
+<td align="right" valign="middle" width="96"><sub>★ ${fmtStars(r.stars)}</sub></td>
+</tr>`;
+  }).join('\n');
+  const more = repos.length > CONFIG.maxRepoRows
+    ? `\n<tr><td colspan="4" align="center"><sub>… 另有 ${repos.length - CONFIG.maxRepoRows} 个仓库也有已合并的 PR</sub></td></tr>`
+    : '';
+  return `<table>
+<tr>
+<td width="46"></td>
+<td><sub><b>仓库</b></sub></td>
+<td align="right" width="150"><sub><b>已合并 PR</b></sub></td>
+<td align="right" width="96"><sub><b>星标</b></sub></td>
+</tr>
+${rows}${more}
+</table>`;
 }
 
 async function main() {
@@ -299,7 +376,7 @@ async function main() {
   let recent30 = 0;
   for (const it of items) {
     const full = it.repository_url.split('/repos/')[1];
-    if (!byRepo.has(full)) byRepo.set(full, { full, count: 0, stars: 0 });
+    if (!byRepo.has(full)) byRepo.set(full, { full, count: 0, stars: 0, avatar: '' });
     byRepo.get(full).count += 1;
     if (full.split('/')[0] !== USER) external += 1;
     const mergedAt = it.pull_request?.merged_at;
@@ -311,24 +388,27 @@ async function main() {
     }
   }
 
-  const stars = await loadStars([...byRepo.keys()]);
-  for (const rec of byRepo.values()) rec.stars = stars.get(rec.full) ?? 0;
+  const meta = await loadRepoMeta([...byRepo.keys()]);
+  for (const rec of byRepo.values()) {
+    rec.stars = meta.get(rec.full)?.stars ?? 0;
+    rec.avatar = meta.get(rec.full)?.avatar ?? '';
+  }
   const repos = [...byRepo.values()].sort((a, b) => b.count - a.count || b.stars - a.stars);
 
-  const svg = buildCard({ items, repos, external, recent30, perDay, now });
+  const svg = buildCard({ total: items.length, external, recent30, perDay, now });
   await writeFile(path.join(ROOT, 'assets', 'profile.svg'), svg, 'utf8');
-  console.log(`profile-stats: 写出 assets/profile.svg（${repos.length} 个仓库）`);
+  console.log('profile-stats: 写出 assets/profile.svg');
+
+  const heatmap = buildHeatmap({ items, now });
+  await writeFile(path.join(ROOT, 'assets', 'activity.svg'), heatmap, 'utf8');
+  console.log('profile-stats: 写出 assets/activity.svg');
 
   const readmePath = path.join(ROOT, 'README.md');
   const readme = await readFile(readmePath, 'utf8');
-  const marker = /<!-- MERGED-PRS:START -->[\s\S]*?<!-- MERGED-PRS:END -->/;
-  if (!marker.test(readme)) die('README.md 里缺少 <!-- MERGED-PRS:START --> / <!-- MERGED-PRS:END --> 标记');
-  const recent = [...items].sort((a, b) =>
-    Date.parse(b.pull_request?.merged_at || b.created_at) - Date.parse(a.pull_request?.merged_at || a.created_at),
-  ).slice(0, 5);
-  const body = renderRecent(recent) || '暂无。\n';
-  await writeFile(readmePath, readme.replace(marker, `<!-- MERGED-PRS:START -->\n${body}\n<!-- MERGED-PRS:END -->`), 'utf8');
-  console.log('profile-stats: README.md 已更新');
+  const marker = /<!-- REPO-LIST:START -->[\s\S]*?<!-- REPO-LIST:END -->/;
+  if (!marker.test(readme)) die('README.md 里缺少 <!-- REPO-LIST:START --> / <!-- REPO-LIST:END --> 标记');
+  await writeFile(readmePath, readme.replace(marker, `<!-- REPO-LIST:START -->\n${renderRepoTable(repos)}\n<!-- REPO-LIST:END -->`), 'utf8');
+  console.log('profile-stats: README.md 仓库表已更新');
 }
 
 await main();
