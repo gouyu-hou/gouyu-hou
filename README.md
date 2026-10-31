@@ -1,16 +1,4 @@
-<div align="center">
-
-<h1>gouyu-hou</h1>
-
-<p><b>Agent 开发 · 后端/全栈 · 2027 届本科在读</b></p>
-
-<p>
-  <a href="https://github.com/search?q=author%3Agouyu-hou+language%3APython+is%3Amerged&type=pullrequests"><img alt="Python" src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white" /></a>
-  <a href="https://github.com/search?q=author%3Agouyu-hou+language%3ATypeScript+is%3Amerged&type=pullrequests"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" /></a>
-  <a href="https://github.com/search?q=author%3Agouyu-hou+language%3AJavaScript+is%3Amerged&type=pullrequests"><img alt="Node.js" src="https://img.shields.io/badge/Node.js-339933?style=flat-square&logo=nodedotjs&logoColor=white" /></a>
-</p>
-
-</div>
+<p align="center"><img alt="gouyu-hou · Agent 开发 · 后端/全栈" src="assets/hero.svg" /></p>
 
 <p align="center"><img alt="已合并 PR 统计" src="assets/stats-card.svg" /></p>
 
