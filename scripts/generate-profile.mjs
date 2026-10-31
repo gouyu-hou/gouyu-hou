@@ -64,17 +64,35 @@ async function loadItems() {
   return items;
 }
 
-async function loadStars(fullNames) {
-  const stars = new Map();
+// stars + owner avatar for each repository. The avatar is downloaded and inlined as a
+// base64 data URI so the SVG stays fully self-contained (SVG served as <img> cannot load
+// external images). Newly merged repos therefore always render with their real logo.
+async function loadRepoMeta(fullNames) {
+  const meta = new Map();
   for (const full of fullNames) {
     try {
       const repo = await api(`/repos/${full}`);
-      stars.set(full, repo.stargazers_count ?? 0);
+      const stars = repo.stargazers_count ?? 0;
+      const avatarUrl = (repo.owner?.avatar_url || '').replace(/\?.*/, '?v=4&s=64');
+      let avatar = '';
+      if (avatarUrl) {
+        try {
+          const res = await fetch(avatarUrl, { headers: { 'User-Agent': 'gouyu-hou-profile-stats' } });
+          if (res.ok) {
+            const buf = Buffer.from(await res.arrayBuffer());
+            const ct = res.headers.get('content-type') || 'image/png';
+            avatar = `data:${ct};base64,${buf.toString('base64')}`;
+          }
+        } catch {
+          avatar = '';
+        }
+      }
+      meta.set(full, { stars, avatar });
     } catch {
-      stars.set(full, 0);
+      meta.set(full, { stars: 0, avatar: '' });
     }
   }
-  return stars;
+  return meta;
 }
 
 // Rough advance width: CJK/full-width glyphs ~0.92em, latin/digits ~0.55em (mono ~0.6em).
@@ -179,6 +197,10 @@ function buildCard({ items, repos, external, recent30, perDay, now }) {
     return `<circle class="${cls}" cx="${x.toFixed(1)}" cy="${dotsY}" r="${r.toFixed(1)}"/>`;
   });
 
+  const avatarClips = rows
+    .map((r, i) => `<clipPath id="avc${i}"><circle cx="${PAD + 13}" cy="${listTop + i * rowH + 22}" r="13"/></clipPath>`)
+    .join('\n');
+
   const rowNodes = rows.length
     ? rows.map((r, i) => {
         const top = listTop + i * rowH;
@@ -189,9 +211,11 @@ function buildCard({ items, repos, external, recent30, perDay, now }) {
         const divider = i < rows.length - 1
           ? `<line class="div" x1="${PAD}" y1="${top + rowH - 0.5}" x2="${W - PAD}" y2="${top + rowH - 0.5}"/>`
           : '';
+        const icon = r.avatar
+          ? `<image href="${esc(r.avatar)}" x="${PAD}" y="${cy - 13}" width="26" height="26" preserveAspectRatio="xMidYMid slice" clip-path="url(#avc${i})"/>`
+          : `<rect x="${PAD}" y="${cy - 13}" width="26" height="26" rx="13" fill="${color}" fill-opacity="0.14"/><text x="${PAD + 13}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="600" fill="${color}" font-family="${FONT}">${esc(owner.slice(0, 1).toUpperCase())}</text>`;
         return `<g>
-<rect x="${PAD}" y="${cy - 13}" width="26" height="26" rx="7" fill="${color}" fill-opacity="0.12"/>
-<text x="${PAD + 13}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="13" font-weight="500" fill="${color}" font-family="${FONT}">${esc(owner.slice(0, 1).toUpperCase())}</text>
+${icon}
 <text class="repo" x="${PAD + 38}" y="${cy}" dominant-baseline="central">${name}</text>
 <text x="${X_PR}" y="${cy}" text-anchor="end" dominant-baseline="central"><tspan class="num">${r.count}</tspan><tspan class="unit2"> 个 PR</tspan></text>
 <path class="star" d="${STAR_PATH}" transform="translate(${X_STAR} ${cy})"/>
@@ -210,6 +234,7 @@ ${divider}
 <desc>${esc(`已合并 ${total} 个 PR，其中 ${external} 个来自他人仓库，近 30 天新增 ${recent30} 个。`)}</desc>
 <defs>
 <clipPath id="cardclip"><rect x="1" y="1" width="${W - 2}" height="${H - 2}" rx="14"/></clipPath>
+${avatarClips}
 </defs>
 <style>
   text { font-family: ${FONT}; }
@@ -289,7 +314,7 @@ async function main() {
   let recent30 = 0;
   for (const it of items) {
     const full = it.repository_url.split('/repos/')[1];
-    if (!byRepo.has(full)) byRepo.set(full, { full, count: 0, stars: 0 });
+    if (!byRepo.has(full)) byRepo.set(full, { full, count: 0, stars: 0, avatar: '' });
     byRepo.get(full).count += 1;
     if (full.split('/')[0] !== USER) external += 1;
     const mergedAt = it.pull_request?.merged_at;
@@ -301,8 +326,11 @@ async function main() {
     }
   }
 
-  const stars = await loadStars([...byRepo.keys()]);
-  for (const rec of byRepo.values()) rec.stars = stars.get(rec.full) ?? 0;
+  const meta = await loadRepoMeta([...byRepo.keys()]);
+  for (const rec of byRepo.values()) {
+    rec.stars = meta.get(rec.full)?.stars ?? 0;
+    rec.avatar = meta.get(rec.full)?.avatar ?? '';
+  }
   const repos = [...byRepo.values()].sort((a, b) => b.count - a.count || b.stars - a.stars);
 
   const svg = buildCard({ items, repos, external, recent30, perDay, now });
