@@ -292,6 +292,7 @@ async function main() {
     rec.avatarUrl = meta.get(rec.full)?.avatarUrl ?? '';
     rec.avatarData = meta.get(rec.full)?.avatarData ?? '';
   }
+  // 按已合并 PR 个数降序排列；个数相同时按 star 数降序，保证顺序稳定。
   const repos = [...byRepo.values()].sort((a, b) => b.count - a.count || b.stars - a.stars);
 
   const assetsDir = path.join(ROOT, 'assets');
