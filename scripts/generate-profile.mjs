@@ -147,12 +147,18 @@ function renderRepoRowSVG(r) {
   const PAD = 32;
   const AV = 32;
   const nameX = PAD + AV + 12;
-  const X_STARS = W - PAD;
+  // 表格式固定列：PR 数与星标各在固定列中心居中，列间留出明确间距
+  const PR_CX = 640;
+  const STAR_CX = 792;
   const starText = fmtStars(r.stars);
-  const starX = X_STARS - textWidth(starText, 16) - 9;
-  const X_PR = starX - 16;
-  const nameMax = X_PR - 20 - nameX;
+  const nameMax = PR_CX - 52 - nameX;
   const name = esc(truncate(r.full, 16, nameMax, true));
+  const ICON_W = 14;
+  const ICON_GAP = 8;
+  const starGroupW = ICON_W + ICON_GAP + textWidth(starText, 16);
+  const starGroupLeft = STAR_CX - starGroupW / 2;
+  const starIconCx = starGroupLeft + ICON_W / 2;
+  const starNumX = starGroupLeft + ICON_W + ICON_GAP;
 
   const avatar = r.avatarData
     ? `<image href="${esc(r.avatarData)}" x="${PAD}" y="${cy - AV / 2}" width="${AV}" height="${AV}" preserveAspectRatio="xMidYMid slice" clip-path="url(#avc)"/>`
@@ -176,9 +182,9 @@ function renderRepoRowSVG(r) {
 <rect x="0.5" y="0.5" width="${W - 1}" height="${H - 1}" rx="12" fill="var(--bg)" stroke="var(--div)"/>
 ${avatar}
 <text class="repo" x="${nameX}" y="${cy}" dominant-baseline="central">${name}</text>
-<text x="${X_PR}" y="${cy}" text-anchor="end" dominant-baseline="central"><tspan class="num">${r.count}</tspan><tspan class="unit2"> 个 PR</tspan></text>
-<path class="star" d="${STAR_PATH}" transform="translate(${starX} ${cy})"/>
-<text class="stars" x="${X_STARS}" y="${cy}" text-anchor="end" dominant-baseline="central">${starText}</text>
+<text class="num" x="${PR_CX}" y="${cy}" text-anchor="middle" dominant-baseline="central">${r.count} 个 PR</text>
+<path class="star" d="${STAR_PATH}" transform="translate(${starIconCx} ${cy})"/>
+<text class="stars" x="${starNumX}" y="${cy}" dominant-baseline="central">${starText}</text>
 </svg>
 `;
 }
