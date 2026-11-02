@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="880" height="248" viewBox="0 0 880 248" role="img" aria-label="已合并 2 个 PR">
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="248" viewBox="0 0 880 248" role="img" aria-label="已合并 3 个 PR">
 <title>gouyu-hou · 已合并 PR 统计</title>
-<desc>已合并 2 个 PR，其中 2 个来自他人仓库，近 30 天新增 2 个。</desc>
+<desc>已合并 3 个 PR，其中 3 个来自他人仓库，近 30 天新增 3 个。</desc>
 <style>
   text { font-family: ui-sans-serif, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Helvetica Neue', Arial, sans-serif; }
   .head { fill: var(--purple); font-size: 12px; font-weight: 600; letter-spacing: 0.18em; }
@@ -22,9 +22,9 @@
 <text class="head" x="50" y="40" dominant-baseline="central">MERGED PULL REQUESTS</text>
 <text class="from" x="848" y="40" text-anchor="end" dominant-baseline="central">github.com/gouyu-hou</text>
 <line class="div" x1="32" y1="58" x2="848" y2="58"/>
-<text class="big" x="32" y="102" dominant-baseline="central">2</text>
+<text class="big" x="32" y="102" dominant-baseline="central">3</text>
 <text class="bigUnit" x="76.80000000000001" y="102" dominant-baseline="central">↑ PR 已合并</text>
-<text class="subline" x="32" y="158" dominant-baseline="central">2 个来自他人仓库 · 近 30 天 +2</text>
+<text class="subline" x="32" y="158" dominant-baseline="central">3 个来自他人仓库 · 近 30 天 +3</text>
 <circle class="dotOff" cx="50.0" cy="198" r="1.5"/>
 <circle class="dotOff" cx="76.9" cy="198" r="1.5"/>
 <circle class="dotOff" cx="103.8" cy="198" r="1.5"/>
@@ -52,9 +52,9 @@
 <circle class="dotOff" cx="695.5" cy="198" r="1.5"/>
 <circle class="dotOff" cx="722.4" cy="198" r="1.5"/>
 <circle class="dotOff" cx="749.3" cy="198" r="1.5"/>
-<circle class="dotOff" cx="776.2" cy="198" r="1.5"/>
-<circle class="dot" cx="803.1" cy="198" r="4.2"/>
-<circle class="dot" cx="830.0" cy="198" r="4.2"/>
-<text class="dayLabel" x="32" y="224" dominant-baseline="central">10-03</text>
-<text class="dayLabel" x="848" y="224" text-anchor="end" dominant-baseline="central">11-01</text>
+<circle class="dot" cx="776.2" cy="198" r="4.2"/>
+<circle class="dot" cx="803.1" cy="198" r="5.1"/>
+<circle class="dotOff" cx="830.0" cy="198" r="1.5"/>
+<text class="dayLabel" x="32" y="224" dominant-baseline="central">10-04</text>
+<text class="dayLabel" x="848" y="224" text-anchor="end" dominant-baseline="central">11-02</text>
 </svg>
