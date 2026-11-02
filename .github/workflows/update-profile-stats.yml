@@ -25,7 +25,7 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Generate profile stats
+      - name: Generate card
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PROFILE_USER: ${{ github.repository_owner }}
