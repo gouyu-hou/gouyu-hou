@@ -191,12 +191,12 @@ ${avatar}
 
 function renderStats({ repos, now }) {
   if (!repos.length) {
-    return `<p>还没有合并过 PR。</p>\n\n<sub>数据来源 GitHub REST API · 每天北京时间 12:00 自动刷新 · 更新于 ${fmtStamp(now)}（UTC+8）</sub>`;
+    return `<p>还没有合并过 PR。</p>\n\n<sub>数据来源 GitHub REST API · 每天北京时间 14:00 自动刷新 · 更新于 ${fmtStamp(now)}（UTC+8）</sub>`;
   }
   const rows = repos
     .map((r, i) => `<p align="center"><a href="${esc(repoListUrl(r.full))}"><img src="assets/repo-${i}.svg" alt="${esc(r.full)}" /></a></p>`)
     .join('\n');
-  const foot = `<sub>数据来源 GitHub REST API · 每天北京时间 12:00 自动刷新 · 更新于 ${fmtStamp(now)}（UTC+8）</sub>`;
+  const foot = `<sub>数据来源 GitHub REST API · 每天北京时间 14:00 自动刷新 · 更新于 ${fmtStamp(now)}（UTC+8）</sub>`;
   return `${rows}\n\n${foot}`;
 }
 

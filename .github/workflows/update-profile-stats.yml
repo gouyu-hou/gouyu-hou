@@ -2,8 +2,8 @@ name: update profile stats
 
 on:
   schedule:
-    # 每天 UTC 04:00，即北京时间 12:00
-    - cron: "0 4 * * *"
+    # 每天 UTC 06:00，即北京时间 14:00
+    - cron: "0 6 * * *"
   workflow_dispatch:
 
 permissions:
