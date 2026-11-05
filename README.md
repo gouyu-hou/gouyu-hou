@@ -11,5 +11,5 @@
 <p align="center"><a href="https://github.com/openclaw/openclaw/pulls?q=is%3Apr%20author%3Agouyu-hou%20is%3Amerged"><img src="assets/repo-1.svg" alt="openclaw/openclaw" /></a></p>
 <p align="center"><a href="https://github.com/pydantic/pydantic-ai/pulls?q=is%3Apr%20author%3Agouyu-hou%20is%3Amerged"><img src="assets/repo-2.svg" alt="pydantic/pydantic-ai" /></a></p>
 
-<sub>数据来源 GitHub REST API · 每天北京时间 07:00 / 23:00 自动刷新 · 更新于 2026-11-05 11:05（UTC+8）</sub>
+<sub>数据来源 GitHub REST API · 每天北京时间 07:00 / 23:00 自动刷新 · 更新于 2026-11-06 05:19（UTC+8）</sub>
 <!-- PROFILE-STATS:END -->
