@@ -41,20 +41,20 @@
 <circle class="dotOff" cx="399.7" cy="198" r="1.5"/>
 <circle class="dotOff" cx="426.6" cy="198" r="1.5"/>
 <circle class="dotOff" cx="453.4" cy="198" r="1.5"/>
-<circle class="dotOff" cx="480.3" cy="198" r="1.5"/>
-<circle class="dot" cx="507.2" cy="198" r="4.2"/>
-<circle class="dot" cx="534.1" cy="198" r="5.1"/>
-<circle class="dot" cx="561.0" cy="198" r="4.2"/>
-<circle class="dotOff" cx="587.9" cy="198" r="1.5"/>
-<circle class="dot" cx="614.8" cy="198" r="5.8"/>
+<circle class="dot" cx="480.3" cy="198" r="4.2"/>
+<circle class="dot" cx="507.2" cy="198" r="5.1"/>
+<circle class="dot" cx="534.1" cy="198" r="4.2"/>
+<circle class="dotOff" cx="561.0" cy="198" r="1.5"/>
+<circle class="dot" cx="587.9" cy="198" r="5.8"/>
+<circle class="dotOff" cx="614.8" cy="198" r="1.5"/>
 <circle class="dotOff" cx="641.7" cy="198" r="1.5"/>
 <circle class="dotOff" cx="668.6" cy="198" r="1.5"/>
 <circle class="dotOff" cx="695.5" cy="198" r="1.5"/>
-<circle class="dotOff" cx="722.4" cy="198" r="1.5"/>
-<circle class="dot" cx="749.3" cy="198" r="5.1"/>
+<circle class="dot" cx="722.4" cy="198" r="5.1"/>
+<circle class="dotOff" cx="749.3" cy="198" r="1.5"/>
 <circle class="dotOff" cx="776.2" cy="198" r="1.5"/>
 <circle class="dotOff" cx="803.1" cy="198" r="1.5"/>
 <circle class="dotOff" cx="830.0" cy="198" r="1.5"/>
-<text class="dayLabel" x="32" y="224" dominant-baseline="central">10-14</text>
-<text class="dayLabel" x="848" y="224" text-anchor="end" dominant-baseline="central">11-12</text>
+<text class="dayLabel" x="32" y="224" dominant-baseline="central">10-15</text>
+<text class="dayLabel" x="848" y="224" text-anchor="end" dominant-baseline="central">11-13</text>
 </svg>
