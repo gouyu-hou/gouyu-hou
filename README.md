@@ -12,5 +12,5 @@
 <p align="center"><a href="https://github.com/bytedance/deer-flow/pulls?q=is%3Apr%20author%3Agouyu-hou%20is%3Amerged"><img src="assets/repo-2.svg" alt="bytedance/deer-flow" /></a></p>
 <p align="center"><a href="https://github.com/simplexai-labs/linger/pulls?q=is%3Apr%20author%3Agouyu-hou%20is%3Amerged"><img src="assets/repo-3.svg" alt="simplexai-labs/linger" /></a></p>
 
-<sub>数据来源 GitHub REST API · 每天北京时间 07:00 / 23:00 自动刷新 · 更新于 2026-11-24 14:42（UTC+8）</sub>
+<sub>数据来源 GitHub REST API · 每天北京时间 07:00 / 23:00 自动刷新 · 更新于 2026-11-25 07:43（UTC+8）</sub>
 <!-- PROFILE-STATS:END -->
