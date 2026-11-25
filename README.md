@@ -7,10 +7,11 @@
 ## 已合并的 Pull Requests
 
 <!-- PROFILE-STATS:START -->
-<p align="center"><a href="https://github.com/openclaw/openclaw/pulls?q=is%3Apr%20author%3Agouyu-hou%20is%3Amerged"><img src="assets/repo-0.svg" alt="openclaw/openclaw" /></a></p>
-<p align="center"><a href="https://github.com/pydantic/pydantic-ai/pulls?q=is%3Apr%20author%3Agouyu-hou%20is%3Amerged"><img src="assets/repo-1.svg" alt="pydantic/pydantic-ai" /></a></p>
-<p align="center"><a href="https://github.com/bytedance/deer-flow/pulls?q=is%3Apr%20author%3Agouyu-hou%20is%3Amerged"><img src="assets/repo-2.svg" alt="bytedance/deer-flow" /></a></p>
-<p align="center"><a href="https://github.com/simplexai-labs/linger/pulls?q=is%3Apr%20author%3Agouyu-hou%20is%3Amerged"><img src="assets/repo-3.svg" alt="simplexai-labs/linger" /></a></p>
+<p align="center"><a href="https://github.com/Tencent/WeKnora/pulls?q=is%3Apr%20author%3Agouyu-hou%20is%3Amerged"><img src="assets/repo-0.svg" alt="Tencent/WeKnora" /></a></p>
+<p align="center"><a href="https://github.com/openclaw/openclaw/pulls?q=is%3Apr%20author%3Agouyu-hou%20is%3Amerged"><img src="assets/repo-1.svg" alt="openclaw/openclaw" /></a></p>
+<p align="center"><a href="https://github.com/pydantic/pydantic-ai/pulls?q=is%3Apr%20author%3Agouyu-hou%20is%3Amerged"><img src="assets/repo-2.svg" alt="pydantic/pydantic-ai" /></a></p>
+<p align="center"><a href="https://github.com/bytedance/deer-flow/pulls?q=is%3Apr%20author%3Agouyu-hou%20is%3Amerged"><img src="assets/repo-3.svg" alt="bytedance/deer-flow" /></a></p>
+<p align="center"><a href="https://github.com/simplexai-labs/linger/pulls?q=is%3Apr%20author%3Agouyu-hou%20is%3Amerged"><img src="assets/repo-4.svg" alt="simplexai-labs/linger" /></a></p>
 
-<sub>数据来源 GitHub REST API · 每天北京时间 07:00 / 23:00 自动刷新 · 更新于 2026-11-25 13:12（UTC+8）</sub>
+<sub>数据来源 GitHub REST API · 每天北京时间 07:00 / 23:00 自动刷新 · 更新于 2026-11-26 07:27（UTC+8）</sub>
 <!-- PROFILE-STATS:END -->
