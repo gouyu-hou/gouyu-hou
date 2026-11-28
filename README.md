@@ -14,5 +14,5 @@
 <p align="center"><a href="https://github.com/Tencent/teamai-cli/pulls?q=is%3Apr%20author%3Agouyu-hou%20is%3Amerged"><img src="assets/repo-4.svg" alt="Tencent/teamai-cli" /></a></p>
 <p align="center"><a href="https://github.com/simplexai-labs/linger/pulls?q=is%3Apr%20author%3Agouyu-hou%20is%3Amerged"><img src="assets/repo-5.svg" alt="simplexai-labs/linger" /></a></p>
 
-<sub>数据来源 GitHub REST API · 每天北京时间 07:00 / 23:00 自动刷新 · 更新于 2026-11-28 07:11（UTC+8）</sub>
+<sub>数据来源 GitHub REST API · 每天北京时间 07:00 / 23:00 自动刷新 · 更新于 2026-11-28 12:28（UTC+8）</sub>
 <!-- PROFILE-STATS:END -->
